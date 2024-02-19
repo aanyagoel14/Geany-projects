@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lets Play!</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.min.js"></script>
+</head>
+<body>
+<script>
+    //Creating Scene, Camera, Renderer
+    const scene = new THREE.Scene(); //this creates a new scene
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); //this creates a new camera
+    const renderer = new THREE.WebGLRenderer();//this creates a new renderer
+    renderer.setSize(window.innerWidth, window.innerHeight);//this sets the size of the renderer
+    document.body.appendChild(renderer.domElement);//this appends the renderer to the document body
+
+    // Background Stars
+    const starGeometry = new THREE.BufferGeometry();//this creates geometry for stars
+    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });//this creates material for stars
+    const starVertices = [];
+    for (let i = 0; i < 2000; i++) {//this is a loop to create stars in the background
+        //below are random x,y and z positions
+        const x = THREE.MathUtils.randFloatSpread(1000);
+        const y = THREE.MathUtils.randFloatSpread(1000);
+        const z = THREE.MathUtils.randFloatSpread(1000);
+        starVertices.push(x, y, z);
+    }
+    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));//here we're setting position attribute for stars
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);//adding stars to the scene
+
+    //for cannon
+    const cannonGeometry = new THREE.BoxGeometry(3, 3, 20);//this creates geometry for cannon
+    const cannonMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });//this creates material for cannon
+    const cannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+    cannon.position.set(0, -90, 0);//this gives position to the cannon
+    scene.add(cannon);//adding cannon to the scene
+
+    //for bullets
+    const bulletGeometry = new THREE.SphereGeometry(1, 16, 16);//this creates geometry for a bullet
+    const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });//this creates material for a bullet
+    const bullets = [];//this creates an array to store bullets
+
+    //for aliens
+    const alienCount = 20;//this is the no of aliens
+    const alienGroup = new THREE.Group();//this creates a group for aliens
+    const alienShape = new THREE.Shape();//this creates a shape for aliens
+    alienShape.moveTo(0, 0);
+    alienShape.lineTo(2, 5);
+    alienShape.lineTo(-2, 5);
+    alienShape.lineTo(0, 0);
+    const alienGeometry = new THREE.ShapeGeometry(alienShape);//this creates the geometry for the aliens
+    const alienMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });//this creates the material for the aliens
+   
+    for (let i = 0; i < alienCount; i++) {
+        const alien = new THREE.Mesh(alienGeometry, alienMaterial);
+        alien.position.set((i - alienCount / 2) * 10, 40, 0);
+        alienGroup.add(alien);
+    }
+    //this is the loop to create the aliens which is creating mesh for aliens, setting position and adding to the group
+    scene.add(alienGroup);//this adds alien group to the scene
+
+    //this is the code to generate Space Invaders text
+    const loader = new THREE.FontLoader();//this is creating font loader
+    loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+        const textGeometry = new THREE.TextGeometry('Space Invaders', {
+            font: font,
+            size: 10,
+            height: 1,
+            curveSegments: 12,
+            bevelEnabled: false
+        });
+        //above code adds property to the font
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });//this creates material for text
+        const text = new THREE.Mesh(textGeometry, textMaterial);//this creates mesh for text
+        text.position.set(-70, 50, 0);//setting position
+        scene.add(text);//this adds text to scene
+    });
+
+    //for animation
+    function animate() {
+        requestAnimationFrame(animate);
+        //this provides the movement to the aliens side to side
+        alienGroup.position.x += Math.sin(Date.now() * 0.001);
+        for (let i = bullets.length - 1; i >= 0; i--) {//loop through bullets
+            const bullet = bullets[i];
+            bullet.position.y += 1; //this adjusts the bullet speed
+           
+            //this checks the collision with aliens
+            for (let j = alienGroup.children.length - 1; j >= 0; j--) {//this is the loop through the aliens
+                const alien = alienGroup.children[j];
+                if (bullet.position.distanceTo(alien.position) < 2) {//here we're checking if the bullet hits the alien then it removes both the bullet and the alien from the scene
+                    scene.remove(alien);
+                    scene.remove(bullet);
+                    bullets.splice(i, 1); 
+                    updateScore();//this updates the score when an alien is hit
+                    break; //this breaks the loop since the bullet can hit only one alien
+                }
+            }
+        }
+        renderer.render(scene, camera);//we're rendering the scene
+    }
+    animate();//start the animation
+    camera.position.z = 150;//setting the position of the camera
+
+    //this event listener is used for shooting bullets on mouse click
+    document.addEventListener('mousedown', () => {
+        const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+        bullet.position.copy(cannon.position);//setting the position for bullet
+        scene.add(bullet);//this adds bullet to scene
+        bullets.push(bullet);//this adds bullet to the array
+    });
+
+    //thsi displays the score of the game
+    const score1 = document.createElement('div');
+    score1.style.position = 'absolute';
+    score1.style.top = '10px';
+    score1.style.left = '10px';
+    score1.style.color = 'pink';
+    score1.style.fontSize = '18px';
+    score1.textContent = 'Score: 0';
+    document.body.appendChild(score1);
+    //above code gives style
+    let score = 0;
+
+    function updateScore() {
+        score += 10; //this each hit scores 10 points
+        score1.textContent = 'Score: ' + score;
+    }
+
+</script>
+</body>
+</html>
