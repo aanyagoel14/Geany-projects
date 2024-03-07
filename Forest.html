@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forest Scene</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.min.js"></script>
+</head>
+<body>
+
+<script>
+    // Name- Aanya Goel
+    // Course-  COSC 3306
+  
+    const scene = new THREE.Scene(); // creating a three.js scene
+    scene.background = new THREE.Color(0xADD8E6); //this is setting the bg color
+    scene.fog = new THREE.Fog(0x87CEEB, 1, 200); // Adding fog to scene, color, start dist, end dist
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);//creating a new perspective camera
+    camera.position.set(0, 30, 100); // Adjusting camera position
+    camera.lookAt(0, 0, 0);  // adjusting camera look 
+
+    const renderer = new THREE.WebGLRenderer(); //creating webgl renderer
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);//Set renderer size to match window size    
+    document.body.appendChild(renderer.domElement);// Append renderer's DOM element
+
+    //adding ambient light to scene
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    //adding directional light to scene
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(-1, 2, 4);
+    scene.add(directionalLight);
+
+    //this is to create the clouds
+    function createCloud() {
+        const cloudGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+        const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        //randomizing cloud position within scene
+        cloud.position.x = Math.random() * 200 - 100;
+        cloud.position.y = Math.random() * 30 + 50; // Random height above horizon
+        cloud.position.z = Math.random() * 200 - 100;
+        return cloud;
+    }
+    //creating and adding clouds to the scene
+    for (let i = 0; i < 10; i++) {
+        const cloud = createCloud();
+        scene.add(cloud);
+    }
+
+    //this is to create trees of dii shapes
+    function createTree() {
+        //this is the trunk part
+        const trunkHeight = Math.random() * 5 + 5;
+        const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, trunkHeight, 12);
+        const trunkMaterial = new THREE.MeshLambertMaterial({color: 0x8B4513});
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+        trunk.position.y = trunkHeight / 2;
+
+        //this is to create leaves or upper part using cone shape
+        const leavesHeight = Math.random() * 4 + 4;
+        const leavesGeometry = new THREE.ConeGeometry(2, leavesHeight, 8);
+        const leavesMaterial = new THREE.MeshLambertMaterial({color: 0x228B22});
+        const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+        leaves.position.y = trunkHeight + leavesHeight / 2;
+
+        //this is tree Group to add trunk and leaves
+        const tree = new THREE.Group();
+        tree.add(trunk);
+        tree.add(leaves);
+
+        //this is to apply transformations
+        // Randomize tree position within scene
+        tree.position.x = Math.random() * 200 - 100;
+        tree.position.z = Math.random() * 200 - 100;
+        tree.position.y = 0;
+        // Randomize tree rotation
+        tree.rotation.y = Math.random() * Math.PI * 2;
+        tree.rotation.x = (Math.random() - 0.5) * 0.1;
+        tree.rotation.z = (Math.random() - 0.5) * 0.1;
+        // Randomize tree scale
+        const scale = Math.random() * 0.5 + 0.75;
+        tree.scale.set(scale, scale, scale);
+
+        return tree;
+    }
+
+    // Create and add trees to the scene
+    for (let i = 0; i < 150; i++) {
+        const tree = createTree();
+        scene.add(tree);
+    }
+
+    //to is to create terrain of brown color
+    const terrainGeometry = new THREE.PlaneGeometry(500, 500, 50, 50);
+    const terrainMaterial = new THREE.MeshLambertMaterial({color: 0x8B4513});
+    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.position.y = -2; // adjusting height of terrain
+    scene.add(terrain);
+
+    //this is to animate the scene
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+
+     // Load and add skydome- I've tried to load but I wasn't getting exact img rather getting a part of it so I tried an alternative approach to create a cloud like structure.
+    //  const loader = new THREE.TextureLoader();
+    // loader.load(
+    //     // URL of the skydome image
+    //     'sky1.jpg',
+    //     // onLoad callback function
+    //     function (texture) {
+    //         // Create skydome geometry
+    //         const skydomeGeometry = new THREE.SphereGeometry(1000, 32, 32);
+    //         // Apply texture to the skydome material and set color to white
+    //         const skydomeMaterial = new THREE.MeshBasicMaterial({ map: texture, color: 0xffffff, side: THREE.BackSide });
+    //         // Create skydome mesh
+    //         const skydome = new THREE.Mesh(skydomeGeometry, skydomeMaterial);
+    //         // Add skydome to the scene
+    //         scene.add(skydome);
+    //     }
+    // );
+
+
+    animate();//starting animation
+</script>
+</body>
+</html>
