@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D HOUSE MODEL</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Scene setup
+const scene = new THREE.Scene();      
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 2, 15);
+
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true; // Enable shadow rendering
+document.body.appendChild(renderer.domElement);
+
+// LIGHTS
+// Ambient Light - provides soft white light from all directions
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+// Directional Light - simulates sunlight with parallel rays and casts shadows
+const sunlight = new THREE.DirectionalLight(0xffffff, 1.0);
+sunlight.position.set(5, 10, 5);
+sunlight.castShadow = true;
+scene.add(sunlight);
+
+// Point Light - simulates a lamp inside the room with light emitting in all directions
+const lampLight = new THREE.PointLight(0xffd95b, 1, 100);
+lampLight.position.set(0, 1, 2);
+scene.add(lampLight);
+
+// OBJECTS
+// Sphere - represents a ball or a decorative item in the scene
+const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0x8888ff });
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+sphere.position.set(-2, 0.5, -2);
+scene.add(sphere);
+
+// Table - represents a wooden table with a tabletop and legs
+const tableGeometry = new THREE.BoxGeometry(3, 0.1, 2);
+const tableMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+const table = new THREE.Mesh(tableGeometry, tableMaterial);
+table.position.set(0, 0.6, 0);
+scene.add(table);
+
+// Table Legs - cylindrical legs for the table
+const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5);
+const legMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+const legPositions = [
+    [-1.4, 0.25, -0.9],
+    [1.4, 0.25, -0.9],
+    [1.4, 0.25, 0.9],
+    [-1.4, 0.25, 0.9]
+];
+legPositions.forEach((pos) => {
+    const leg = new THREE.Mesh(legGeometry, legMaterial);
+    leg.position.set(...pos);
+    scene.add(leg);
+});
+
+// Flower Vase with Stem and Petals - decorative item for the scene
+const cornerPosition = { x: -5, z: -3 };
+// Vase
+const vaseGeometry = new THREE.CylinderGeometry(0.1, 0.2, 0.8, 12);
+const vaseMaterial = new THREE.MeshStandardMaterial({ color: 'darkslateblue' });
+const vase = new THREE.Mesh(vaseGeometry, vaseMaterial);
+vase.position.set(cornerPosition.x, 0.4, cornerPosition.z); 
+scene.add(vase);
+// Stem
+const stemGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1, 12);
+const stemMaterial = new THREE.MeshLambertMaterial({color: 'green'});
+const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+stem.position.set(cornerPosition.x, 1.2, cornerPosition.z); 
+scene.add(stem);
+// Petals
+const petalGeometry = new THREE.SphereGeometry(0.1, 32, 16); 
+const petalMaterial = new THREE.MeshLambertMaterial({color: 'pink'});
+for (let i = 0; i < 6; i++) {
+    const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+    const angle = (i / 6) * Math.PI * 2; 
+    const distance = 0.15; 
+    petal.position.set(cornerPosition.x + distance * Math.cos(angle), 1.9 + distance * Math.sin(angle), cornerPosition.z);
+    scene.add(petal);
+}
+// Flower Center
+const centerGeometry = new THREE.SphereGeometry(0.12, 32, 16);
+const centerMaterial = new THREE.MeshLambertMaterial({color: 'yellow'});
+const center = new THREE.Mesh(centerGeometry, centerMaterial);
+center.position.set(cornerPosition.x, 1.9, cornerPosition.z); 
+scene.add(center);
+
+// Roof
+const roofGeometry = new THREE.ConeGeometry(5, 2, 4);
+const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+roof.position.set(0, 3.5, 0);
+roof.rotation.y = Math.PI / 4; // Adjust rotation to align with the walls
+scene.add(roof);
+
+
+// Shader Material - for creating a glass-like effect on the icosahedron
+const glassShaderMaterial = new THREE.ShaderMaterial({
+    vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+    fragmentShader: `
+        varying vec3 vNormal;
+        void main() {
+            float intensity = pow(0.5 - dot(vNormal, vec3(0, 0, 1)), 2.0);
+            gl_FragColor = vec4(0.5, 0.7, 1.0, 0.3) * intensity;
+        }`,
+    transparent: true,
+    side: THREE.DoubleSide,
+});
+const glassGeometry = new THREE.IcosahedronGeometry(1, 1);
+const glassMesh = new THREE.Mesh(glassGeometry, glassShaderMaterial);
+glassMesh.position.set(0, 1, -2);
+scene.add(glassMesh);
+
+// TEXTURES
+// Floor texture application
+const textureLoader = new THREE.TextureLoader();
+const marbleTexture = textureLoader.load('floor.png'); 
+const floorMaterial = new THREE.MeshStandardMaterial({ map: marbleTexture });
+const floorGeometry = new THREE.PlaneGeometry(10, 10); 
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2; 
+floor.position.y = 0; 
+scene.add(floor);
+
+// Wall texture application
+const wallTexture = textureLoader.load('wall.png'); 
+const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture });
+const wallGeometry = new THREE.PlaneGeometry(5, 5);     
+const wallPositions = [
+    { position: [-5, 2.5, 0], rotation: [0, Math.PI / 2, 0] }, 
+    { position: [5, 2.5, 0], rotation: [0, -Math.PI / 2, 0] }, 
+    { position: [0, 2.5, -5], rotation: [0, Math.PI, 0] }, 
+];
+wallPositions.forEach(({ position, rotation }) => {
+    const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall.position.set(...position);
+    wall.rotation.set(...rotation);
+    scene.add(wall);
+});
+
+// Skydome to create a realistic sky background
+const skydomeLoader = new THREE.TextureLoader();
+const skydomeTexture = skydomeLoader.load('sky1.jpg');
+const skydomeGeometry = new THREE.SphereGeometry(500, 60, 40); 
+const skydomeMaterial = new THREE.MeshBasicMaterial({ 
+    map: skydomeTexture,
+    side: THREE.BackSide // The texture is on the inside of the sphere
+});
+const skydome = new THREE.Mesh(skydomeGeometry, skydomeMaterial);
+scene.add(skydome);
+
+// Control setup for camera manipulation
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+// Model Loader - used for loading external 3D models
+const loader = new THREE.GLTFLoader();
+loader.load('Aanya.glb', function (gltf) {
+    scene.add(gltf.scene);
+    console.log("Model loaded successfully.");
+}, undefined, function (error) {
+    console.error('Error loading model:', error);
+});
+
+// Animation loop - continuously updates and renders the scene
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update(); // Only required if controls.enableDamping or controls.autoRotate are set to true
+    renderer.render(scene, camera);
+}
+animate();
+
+    </script>
+</body>
+</html>
